@@ -113,6 +113,7 @@ def get_flash_attention_extensions(cuda_version: int, extra_compile_args):
                 "nvcc": extra_compile_args.get("nvcc", [])
                 + [
                     "-O3",
+                    "-std=c++17",
                     "-U__CUDA_NO_HALF_OPERATORS__",
                     "-U__CUDA_NO_HALF_CONVERSIONS__",
                     "--expt-relaxed-constexpr",
@@ -167,7 +168,7 @@ def get_extensions():
     extra_compile_args = {"cxx": ["-O3"]}
     if sys.platform == "win32":
         define_macros += [("xformers_EXPORTS", None)]
-        extra_compile_args["cxx"].append("/MP")
+        extra_compile_args["cxx"].extend(["/MP", "/w", "/Zc:preprocessor", "/Zc:lambda"])
     elif "OpenMP not found" not in torch.__config__.parallel_info():
         extra_compile_args["cxx"].append("-fopenmp")
 
@@ -192,7 +193,16 @@ def get_extensions():
             nvcc_flags += [
                 "--threads",
                 "4",
-                "--ptxas-options=-v",
+                "--ptxas-options=-v"
+            ]
+        if sys.platform == "win32":
+            nvcc_flags += [
+                "-std=c++17",
+                "-Xcompiler",
+                "/Zc:preprocessor",
+                "-Xcompiler",
+                "/Zc:lambda",
+                "--disable-warnings"
             ]
         extra_compile_args["nvcc"] = nvcc_flags
 
